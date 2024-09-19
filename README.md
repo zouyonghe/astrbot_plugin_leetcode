@@ -1,10 +1,8 @@
-# helloworld
+# leetcode For AstrBot
 
-AstrBot 插件模板
+获取 Leetcode 每日一题、随机题目。
 
-A template plugin for AstrBot plugin feature
+> 需要打开 `t2i` 功能。
 
-# 支持
-
-[帮助文档](https://astrbot.soulter.top/center/docs/%E5%BC%80%E5%8F%91/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/
-)
+- `lc每日` 每日一题
+- `lc随机` 随机题目
