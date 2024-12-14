@@ -2,8 +2,7 @@ import aiohttp, json, os, asyncio, logging
 import apscheduler
 import apscheduler.schedulers
 import apscheduler.schedulers.asyncio
-from util.plugin_dev.api.v1.bot import Context, AstrMessageEvent, CommandResult
-from util.plugin_dev.api.v1.config import *
+from astrbot.api.all import Context, AstrMessageEvent, CommandResult
 
 class Main:
     def __init__(self, context: Context) -> None:
