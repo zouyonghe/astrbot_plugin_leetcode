@@ -1,16 +1,15 @@
+import asyncio
+import json
+import logging
+import os
 import tempfile
-import imgkit
 
 import aiohttp
 import apscheduler
 import apscheduler.schedulers
 import apscheduler.schedulers.asyncio
-import asyncio
-import json
-import logging
-import os
-
 from markdown2 import markdown
+from playwright.async_api import async_playwright
 
 from astrbot.api.all import Context, AstrMessageEvent, CommandResult
 
@@ -47,7 +46,7 @@ class Main:
         '''自动发送每日一题'''
         self.logger.info(f"正在推送 Leetcode 每日一题给 {len(self.lc_auto_daily_ids)} 个会话...")
         question_id, title_cn, difficulty, problem, url = await self._get_daily_problem()
-        img_path = self._markdown_to_temp_image(
+        img_path = await self._markdown_to_temp_image(
             f"""## Leetcode Daily: {question_id}.{title_cn} ({difficulty})\n---\n{problem}\n---\n链接: {url}""")
         for session_id in self.lc_auto_daily_ids:
             # image_url = await self.context.image_renderer.render(f"""## Leetcode Daily: {question_id}.{title_cn} ({difficulty})\n---\n{problem}\n---\n链接: {url}""", return_url=True)
@@ -104,7 +103,7 @@ class Main:
     async def daily_problem(self, message: AstrMessageEvent, context: Context):
         '''每日一题'''
         question_id, title_cn, difficulty, problem, url = await self._get_daily_problem()
-        img_path = self._markdown_to_temp_image(
+        img_path = await self._markdown_to_temp_image(
             f"""## Leetcode Daily: {question_id}.{title_cn} ({difficulty})\n---\n{problem}\n---\n链接: {url}""")
         return CommandResult().file_image(img_path)
 
@@ -117,49 +116,51 @@ class Main:
         return CommandResult().use_t2i(True) \
                         .message(f"""## Leetcode Random\n---\n{problem}\n---\n链接: {url}""")
 
-    def _markdown_to_temp_image(self, markdown_content: str) -> str:
+    async def _markdown_to_temp_image(self, markdown_content: str) -> str:
         """
-           将 Markdown 渲染为 HTML 后，使用 imgkit 转换为 PNG，并保存到临时文件。
-           返回临时文件的文件名（路径）。
-           """
+        将 Markdown 渲染为 HTML 后，使用 Playwright 转换为 PNG，并保存到临时文件。
+        返回临时文件的文件名（路径）。
+        """
         # 将 Markdown 转 HTML
         html_body = markdown(markdown_content)
 
-        # 包装完整的 HTML 内容，添加基础样式
+        # 包装完整 HTML，添加基础样式
         html_content = f"""
-           <!DOCTYPE html>
-           <html>
-               <head>
-                   <meta charset="utf-8">
-                   <style>
-                       body {{
-                           font-family: Arial, sans-serif;
-                           margin: 20px;
-                       }}
-                       h1 {{ color: #0096FF; }}
-                       p, li {{ color: #333333; line-height: 1.5; }}
-                       a {{ color: #FF4500; text-decoration: none; }}
-                   </style>
-               </head>
-               <body>
-                   {html_body}
-               </body>
-           </html>
-           """
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        margin: 20px;
+                    }}
+                    h1 {{ color: #0096FF; }}
+                    p, li {{ color: #333333; line-height: 1.5; }}
+                    a {{ color: #FF4500; text-decoration: none; }}
+                </style>
+            </head>
+            <body>
+                {html_body}
+            </body>
+        </html>
+        """
 
         # 创建临时文件来保存图片
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-            temp_file_name = tmp_file.name  # 获取临时文件名
+            temp_file_name = tmp_file.name  # 获取临时文件路径
 
-        # 转换为 PNG 并保存
-        imgkit.from_string(html_content, temp_file_name, options={
-            'format': 'png',
-            'width': 800,
-            'disable-smart-width': ''  # 使内容固定宽度
-        })
+        # 使用 Playwright 渲染 HTML 为图片
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+            await page.set_content(html_content)
+            await page.set_viewport_size({"width": 800, "height": 1000})  # 设置截图大小
+            await page.screenshot(path=temp_file_name)  # 保存截图
+            await browser.close()
 
-        # 返回生成的临时文件路径
+        # 返回临时文件路径
         return temp_file_name
+
 
 
 
