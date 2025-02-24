@@ -104,8 +104,9 @@ class Main:
     async def daily_problem(self, message: AstrMessageEvent, context: Context):
         '''每日一题'''
         question_id, title_cn, difficulty, problem, url = await self._get_daily_problem()
-        return CommandResult().use_t2i(True) \
-                        .message(f"""## Leetcode Daily: {question_id}.{title_cn} ({difficulty})\n---\n{problem}\n---\n链接: {url}""")
+        img_path = self._markdown_to_temp_image(
+            f"""## Leetcode Daily: {question_id}.{title_cn} ({difficulty})\n---\n{problem}\n---\n链接: {url}""")
+        return CommandResult().file_image(img_path)
 
     async def random_problem(self, message: AstrMessageEvent, context: Context):
         query = r'{"query":"    query problemsetRandomFilteredQuestion($categorySlug: String!, $filters: QuestionListFilterInput) {  problemsetRandomFilteredQuestion(categorySlug: $categorySlug, filters: $filters)}    ","variables":{"categorySlug":"all-code-essentials","filters":{}},"operationName":"problemsetRandomFilteredQuestion"}'
