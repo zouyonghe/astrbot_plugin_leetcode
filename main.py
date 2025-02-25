@@ -154,7 +154,9 @@ class Main:
             browser = await p.chromium.launch()
             page = await browser.new_page()
             await page.set_content(html_content)
-            await page.set_viewport_size({"width": 800, "height": 1000})  # 设置截图大小
+            # 动态获取 HTML 页面的内容高度
+            content_height = await page.evaluate("document.body.scrollHeight")
+            await page.set_viewport_size({"width": 800, "height": content_height})  # 设置截图大小
             await page.screenshot(path=temp_file_name)  # 保存截图
             await browser.close()
 
