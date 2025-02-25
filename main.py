@@ -104,7 +104,7 @@ class Main:
         '''每日一题'''
         question_id, title_cn, difficulty, problem, url = await self._get_daily_problem()
         img_path = await self._markdown_to_temp_image(
-            f"""## Leetcode Daily: {question_id}.{title_cn} ({difficulty})\n---\n{problem}\n---\n链接: {url}""")
+            f"""<h2>Leetcode Daily: {question_id}.{title_cn} ({difficulty})</h2>\n---\n{problem}\n---\n链接: {url}""")
         return CommandResult().file_image(img_path)
 
     async def random_problem(self, message: AstrMessageEvent, context: Context):
